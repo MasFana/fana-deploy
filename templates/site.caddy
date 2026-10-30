@@ -1,0 +1,13 @@
+http://{{APP_DOMAIN}} {
+    bind 127.0.0.1
+    root * {{APP_DIR}}/current/public
+    encode zstd gzip
+    file_server
+    php_server
+    log {
+        output file /home/fana-deploy/deployment/logs/{{APP_NAME}}.log {
+            roll_size 10MiB
+            roll_keep 3
+        }
+    }
+}

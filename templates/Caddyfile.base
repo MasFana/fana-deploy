@@ -1,0 +1,22 @@
+{
+    admin off
+    auto_https off
+    http_port 8088
+    log {
+        output file /home/fana-deploy/deployment/logs/caddy.log {
+            roll_size 10MiB
+            roll_keep 3
+        }
+    }
+    frankenphp {
+        num_threads 4
+        max_threads 8
+    }
+}
+
+http://127.0.0.1:8088 {
+    bind 127.0.0.1
+    respond "fana-deploy frankenphp online" 200
+}
+
+import /home/fana-deploy/deployment/caddy/sites/*.caddy

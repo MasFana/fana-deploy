@@ -1,0 +1,18 @@
+domain: fmo.qzz.io
+tunnel_id: 65836ee6-469f-4372-83bb-6d8844dfd338
+tunnel_config: /etc/cloudflared/config.yml
+origin_host: 127.0.0.1
+origin_port: 8088
+max_apps: 8
+retention:
+  releases: 3
+  backups: 5
+resources:
+  min_memory_swap_mb: 600
+  min_disk_free_gb: 1.5
+frankenphp:
+  user: fana
+  gomemlimit: 350MiB
+  gogc: 75
+  num_threads: 4
+  max_threads: 8
