@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "fana-deploy-skills",
+  "version": "1.1.0",
+  "description": "DevOps skills catalog for fana-deploy low-memory Laravel orchestrator on Alpine Linux aarch64",
+  "skills": [
+    {
+      "name": "laravel-deploy",
+      "path": "skills/laravel-deploy/SKILL.md",
+      "category": "devops",
+      "description": "Deploy or upgrade Laravel applications with atomic zero-downtime symlinks, SQLite WAL configuration, and serialized heavy lock budgeting.",
+      "triggers": [
+        "deploy laravel",
+        "install laravel app",
+        "update laravel repository",
+        "deploy new release",
+        "run migrations"
+      ],
+      "command": "/home/fana-deploy/fana-deploy deploy <git_url> [as <app_name>] [domain <hostname>]",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "git_url": {
+            "type": "string",
+            "description": "Git repository URL to clone"
+          },
+          "app_name": {
+            "type": "string",
+            "description": "Lowercase application slug"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Target domain (defaults to <app_name>.fmo.qzz.io)"
+          }
+        },
+        "required": ["git_url"]
+      },
+      "resource_constraints": {
+        "max_ram_mb": 250,
+        "lock_required": "heavy.lock",
+        "database": "sqlite_wal"
+      }
+    },
+    {
+      "name": "app-lifecycle",
+      "path": "skills/app-lifecycle/SKILL.md",
+      "category": "devops",
+      "description": "Manage application lifecycle operations: status, logs, restart, rollback, backup, restore, and safe deletion.",
+      "triggers": [
+        "check app status",
+        "view logs",
+        "restart app",
+        "rollback release",
+        "backup database",
+        "restore database",
+        "remove app",
+        "list apps"
+      ],
+      "command": "/home/fana-deploy/fana-deploy <action> [app_name] [args...]",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["status", "logs", "restart", "rollback", "backup", "restore", "remove", "list"]
+          },
+          "app_name": {
+            "type": "string",
+            "description": "Application identifier"
+          },
+          "extra_arg": {
+            "type": "string",
+            "description": "Backup file path for restore command"
+          }
+        },
+        "required": ["action"]
+      }
+    },
+    {
+      "name": "caddy-site",
+      "path": "skills/caddy-site/SKILL.md",
+      "category": "devops",
+      "description": "Manage FrankenPHP Caddy virtual hosts on loopback 127.0.0.1:8088.",
+      "triggers": [
+        "configure caddy vhost",
+        "validate caddyfile",
+        "reload caddy",
+        "check 8088 origin"
+      ],
+      "command": "su -s /bin/bash fana -c 'frankenphp validate --adapter caddyfile --config /home/fana-deploy/deployment/caddy/Caddyfile'",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "app_name": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "cloudflare-tunnel",
+      "path": "skills/cloudflare-tunnel/SKILL.md",
+      "category": "devops",
+      "description": "Safely manage Cloudflare Tunnel ingress rules while strictly protecting port 8080 service.",
+      "triggers": [
+        "add ingress route",
+        "remove ingress route",
+        "validate cloudflared config",
+        "check public https"
+      ],
+      "command": "/usr/bin/python3 /home/fana-deploy/scripts/ingress_tool.py <add|remove> <hostname> [service]",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["add", "remove"]
+          },
+          "hostname": {
+            "type": "string"
+          },
+          "service": {
+            "type": "string",
+            "default": "http://127.0.0.1:8088"
+          }
+        },
+        "required": ["action", "hostname"]
+      }
+    },
+    {
+      "name": "sqlite-ops",
+      "path": "skills/sqlite-ops/SKILL.md",
+      "category": "devops",
+      "description": "Safe SQLite database maintenance, migrations under lock, WAL mode validation, backups, and integrity verification.",
+      "triggers": [
+        "migrate sqlite database",
+        "fix database locked",
+        "vacuum sqlite",
+        "check sqlite integrity",
+        "backup sqlite database"
+      ],
+      "command": "sqlite3 <db_path> 'PRAGMA integrity_check;'",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "app_name": {
+            "type": "string"
+          },
+          "operation": {
+            "type": "string",
+            "enum": ["integrity_check", "wal_mode", "backup", "vacuum"]
+          }
+        },
+        "required": ["app_name", "operation"]
+      }
+    },
+    {
+      "name": "health-monitor",
+      "path": "skills/health-monitor/SKILL.md",
+      "category": "devops",
+      "description": "Audit system RAM, swap, disk space, and core process health without interrupting running services.",
+      "triggers": [
+        "check system health",
+        "audit memory",
+        "check swap",
+        "check oom events",
+        "system status"
+      ],
+      "command": "/home/fana-deploy/fana-deploy audit",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  ]
+}

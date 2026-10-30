@@ -1,0 +1,184 @@
+{
+  "name": "fana-deploy-openclaw",
+  "version": "1.1.0",
+  "description": "OpenClaw agent adapter and tool schema for fana-deploy on Alpine Linux aarch64",
+  "environment": {
+    "os": "alpine-linux",
+    "arch": "aarch64",
+    "base_dir": "/home/fana-deploy",
+    "runtime": "frankenphp"
+  },
+  "invariants": [
+    "Never kill or modify skripsi viewer on port 8080 (skripsi.fmo.qzz.io)",
+    "Always run composer, npm, and migrations under /home/fana-deploy/deployment/run/heavy.lock",
+    "Enforce SQLite WAL mode and reject MySQL, Postgres, Redis, and Horizon",
+    "Maximum 8 active applications",
+    "Always run cache-clearing barrier after release changes"
+  ],
+  "tools": [
+    {
+      "name": "fana_deploy",
+      "description": "Deploy a new Laravel application from git with atomic symlink, SQLite WAL setup, and Caddy ingress",
+      "command": "/home/fana-deploy/fana-deploy deploy {{git_url}} {%- if app_name %} as {{app_name}}{%- endif %} {%- if domain %} domain {{domain}}{%- endif %}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "git_url": {
+            "type": "string",
+            "description": "Git repository clone URL"
+          },
+          "app_name": {
+            "type": "string",
+            "description": "Optional application slug name"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Optional FQDN domain"
+          }
+        },
+        "required": ["git_url"]
+      }
+    },
+    {
+      "name": "fana_update",
+      "description": "Pull latest git commits for an existing app, build under heavy lock, and atomically swap release symlink",
+      "command": "/home/fana-deploy/fana-deploy update {{app_name}}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "description": "Application slug to update"
+          }
+        },
+        "required": ["app_name"]
+      }
+    },
+    {
+      "name": "fana_rollback",
+      "description": "Rollback an application to its previous release directory",
+      "command": "/home/fana-deploy/fana-deploy rollback {{app_name}}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "description": "Application slug to rollback"
+          }
+        },
+        "required": ["app_name"]
+      }
+    },
+    {
+      "name": "fana_status",
+      "description": "Query health audit and list of active applications, or inspect detailed status of a specific app",
+      "command": "/home/fana-deploy/fana-deploy status {%- if app_name %} {{app_name}}{%- endif %}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "description": "Optional application slug for detailed status"
+          }
+        }
+      }
+    },
+    {
+      "name": "fana_logs",
+      "description": "Tail the last 50 lines of Caddy access logs or Laravel storage logs for an application",
+      "command": "/home/fana-deploy/fana-deploy logs {{app_name}}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "description": "Application slug"
+          }
+        },
+        "required": ["app_name"]
+      }
+    },
+    {
+      "name": "fana_restart",
+      "description": "Restart FrankenPHP web server with memory limits and clear PHP opcode cache",
+      "command": "/home/fana-deploy/fana-deploy restart {{app_name}}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "description": "Application slug"
+          }
+        },
+        "required": ["app_name"]
+      }
+    },
+    {
+      "name": "fana_backup",
+      "description": "Create a manual snapshot backup of an application SQLite database",
+      "command": "/home/fana-deploy/fana-deploy backup {{app_name}}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "description": "Application slug"
+          }
+        },
+        "required": ["app_name"]
+      }
+    },
+    {
+      "name": "fana_restore",
+      "description": "Restore an application SQLite database from a backup file",
+      "command": "/home/fana-deploy/fana-deploy restore {{app_name}} {{backup_file}}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "description": "Application slug"
+          },
+          "backup_file": {
+            "type": "string",
+            "description": "Full path to historical backup .sqlite file"
+          }
+        },
+        "required": ["app_name", "backup_file"]
+      }
+    },
+    {
+      "name": "fana_remove",
+      "description": "Decommission and remove an application, archiving its database and removing tunnel ingress",
+      "command": "/home/fana-deploy/fana-deploy remove {{app_name}}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "description": "Application slug to decommission"
+          }
+        },
+        "required": ["app_name"]
+      }
+    },
+    {
+      "name": "fana_list",
+      "description": "List all active applications, domains, current releases, and statuses",
+      "command": "/home/fana-deploy/fana-deploy list",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "fana_audit",
+      "description": "Execute system health check auditing RAM, swap, disk space, and core process health",
+      "command": "/home/fana-deploy/fana-deploy audit",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  ]
+}

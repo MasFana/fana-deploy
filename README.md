@@ -143,7 +143,14 @@ Designed to run reliably on Single Board Computers (e.g. RK3588, Cortex-A76/A55)
 
 ## Agent-Based DevOps Interface
 
-This platform implements an agentic contract. AI agents (Hermes Agent, Nous, Claude Code CLI, OpenHands, or autonomous shell workers) execute operations through structured declarations in `/home/fana-deploy/skills/`.
+This platform implements an agentic contract. AI agents (Claude Code, Hermes Agent, Nanobot, OpenClaw, OpenHands, Zed, Cursor) execute operations through structured declarations in `/home/fana-deploy/skills/` and agent index files:
+
+- **`AGENTS.md`**: Master agent operating manual and skills index for all AI coding and DevOps agents.
+- **`CLAUDE.md`**: Native Claude Code instructions, command cheat sheet, and safety invariants.
+- **`HERMES.md`**: Nous Research Hermes Agent runtime guidelines and capability map.
+- **`openclaw.json`**: OpenClaw tool manifest with JSON schemas and parameter contracts.
+- **`nanobot.json`**: Nanobot configuration mapping intents to orchestrator actions.
+- **`skills/index.json`**: Machine-readable JSON index of all skills with execution parameters.
 
 ### How Skills Function
 

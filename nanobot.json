@@ -1,0 +1,69 @@
+{
+  "name": "fana-deploy-nanobot",
+  "version": "1.1.0",
+  "instructions": "You are the autonomous DevOps agent for fana-deploy on Alpine aarch64. Enforce SQLite WAL, heavy lock serialization, and never touch port 8080 (skripsi viewer).",
+  "invariants": {
+    "protected_ports": [8080],
+    "storage_backend": "sqlite_wal",
+    "web_server": "frankenphp_classic_8088",
+    "max_apps": 8,
+    "lock_file": "/home/fana-deploy/deployment/run/heavy.lock"
+  },
+  "actions": {
+    "deploy": {
+      "description": "Deploy a new Laravel application from git repository",
+      "cmd": "/home/fana-deploy/fana-deploy deploy {git_url}",
+      "args": ["git_url"]
+    },
+    "update": {
+      "description": "Update application to latest git commit",
+      "cmd": "/home/fana-deploy/fana-deploy update {app_name}",
+      "args": ["app_name"]
+    },
+    "rollback": {
+      "description": "Rollback application to previous release",
+      "cmd": "/home/fana-deploy/fana-deploy rollback {app_name}",
+      "args": ["app_name"]
+    },
+    "status": {
+      "description": "Check application status or system overview",
+      "cmd": "/home/fana-deploy/fana-deploy status {app_name}",
+      "args": ["app_name"]
+    },
+    "logs": {
+      "description": "View the last 50 lines of logs",
+      "cmd": "/home/fana-deploy/fana-deploy logs {app_name}",
+      "args": ["app_name"]
+    },
+    "restart": {
+      "description": "Restart FrankenPHP web server and clear opcode cache",
+      "cmd": "/home/fana-deploy/fana-deploy restart {app_name}",
+      "args": ["app_name"]
+    },
+    "backup": {
+      "description": "Create a database snapshot",
+      "cmd": "/home/fana-deploy/fana-deploy backup {app_name}",
+      "args": ["app_name"]
+    },
+    "restore": {
+      "description": "Restore database from backup file",
+      "cmd": "/home/fana-deploy/fana-deploy restore {app_name} {backup_file}",
+      "args": ["app_name", "backup_file"]
+    },
+    "remove": {
+      "description": "Safely remove an application and archive its database",
+      "cmd": "/home/fana-deploy/fana-deploy remove {app_name}",
+      "args": ["app_name"]
+    },
+    "list": {
+      "description": "List all active applications",
+      "cmd": "/home/fana-deploy/fana-deploy list",
+      "args": []
+    },
+    "audit": {
+      "description": "Run complete system health audit",
+      "cmd": "/home/fana-deploy/fana-deploy audit",
+      "args": []
+    }
+  }
+}
