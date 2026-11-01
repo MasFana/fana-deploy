@@ -160,16 +160,20 @@ Deployments build the entire target directory (`releases/<timestamp>`) completel
    ```
    On POSIX filesystems, `ln -sfn` executes an atomic directory symlink replacement via `rename()`, ensuring no window of time where `/current` is missing or unlinked.
 
-### Cache Clearing Barrier
+### Cache Build Barrier
 
-Following the symlink swap, stale cached bytecode, config, and route mappings can trigger HTTP 500 exceptions if Laravel attempts to load references from the previous release folder. The deployment pipeline enforces an immediate cache purge:
+Caches must be built for the release that is live, not cleared after it. Following the symlink swap the pipeline runs:
 
 ```bash
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-php artisan cache:clear
+php artisan optimize        # config, events, routes, views
 ```
+
+Two failure modes make the old "purge everything" advice actively harmful here:
+
+1. **Stale route cache, not stale cache files**, is what returns HTTP 500/404 after a deploy: a `bootstrap/cache/routes-v7.php` written before a route was added keeps that route invisible (404, or 419 for POST/PATCH behind CSRF). Rebuild with `php artisan route:clear && php artisan optimize`.
+2. **`optimize:clear` can deadlock** when `CACHE_STORE` or `SESSION_DRIVER` is the database: the clear writes to the SQLite file that the live FrankenPHP worker is also writing, and the command hangs until killed. Use the `file` cache/session stores, and only clear with the app stopped.
+
+Code-only changes need no cache action at all: with opcache `validate_timestamps=1` and `revalidate_freq=2`, edited PHP files are revalidated within ~2 seconds.
 
 ### SQLite WAL Mode Architecture
 

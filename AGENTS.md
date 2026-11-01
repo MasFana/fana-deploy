@@ -38,7 +38,7 @@ All AI agents executing actions on this host must strictly respect these safety 
 3. **Strict SQLite Storage**: All apps must store state in `/home/fana-deploy/deployment/apps/<app>/shared/database/database.sqlite` using `PRAGMA journal_mode=WAL;` and `PRAGMA synchronous=NORMAL;`. Reject MySQL, PostgreSQL, Redis, and Horizon.
 4. **Heavy Lock Serialization**: Memory-intensive tasks (Composer install, npm asset builds, database migrations) must run exclusively under `/home/fana-deploy/deployment/run/heavy.lock` using `nice -n 10` and `ionice -c3`. Never run concurrent builds.
 5. **Atomic Release Switching**: Releases are housed in `releases/<timestamp>` and activated by atomically updating the `current` symlink. Never build or clone directly into `current`.
-6. **Mandatory Post-Deploy Cache Clearing Barrier**: After any code update or symlink swap, always clear Laravel framework caches (`config:clear`, `route:clear`, `view:clear`, `cache:clear`) to prevent HTTP 500 errors.
+6. **Post-Deploy Cache Build**: After the symlink swap, build Laravel caches once with `php artisan optimize` (config, events, routes, views). Never clear them afterwards — the release serves from them, and `optimize:clear` deadlocks a live worker when `CACHE_STORE`/`SESSION_DRIVER` is the database.
 7. **Capacity Ceiling**: The host supports a maximum of **8 active applications**. Reject any new deployment if capacity is reached until an unused application is decommissioned.
 
 ---
@@ -156,16 +156,13 @@ Autonomous agents should prioritize using the high-level `fana-deploy` CLI rathe
    ```
 
 ### B. HTTP 500 View / Route Error
-1. Cause: Compiled views or route caches pointing to old release paths.
-2. Fix: Run the cache-clearing barrier:
+1. Cause: Cached routes/views built before the code that needs them, or a stale `bootstrap/cache/routes-v7.php` from the previous release.
+2. Fix: read `shared/storage/logs/laravel.log` first, then rebuild the caches:
    ```bash
    cd /home/fana-deploy/deployment/apps/<app>/current
-   php artisan config:clear
-   php artisan route:clear
-   php artisan view:clear
-   php artisan cache:clear
+   php artisan route:clear && php artisan optimize
    ```
-3. Restart web server: `/home/fana-deploy/fana-deploy restart <app>`.
+3. Restart only if the log points at an already-loaded PHP file: `/home/fana-deploy/fana-deploy restart <app>`.
 
 ### C. SQLite `database is locked` Error
 1. Cause: Transaction timeout or WAL mode missing.

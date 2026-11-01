@@ -227,7 +227,7 @@ fana-deploy audit
 10. Runs database migrations: `php artisan migrate --force`.
 11. If first deployment and seeder exists, runs `php artisan db:seed --force`.
 12. Atomically flips symlink: `ln -sfn releases/<timestamp> current`.
-13. Purges caches: `php artisan config:clear && route:clear && view:clear && cache:clear`.
+13. Builds caches for the live release: `php artisan optimize` (config, events, routes, views). Never cleared afterwards.
 14. Creates vhost in `deployment/caddy/sites/myapp.caddy` and reloads FrankenPHP.
 15. Injects ingress block into `/etc/cloudflared/config.yml` via `ingress_tool.py` and syncs Cloudflare DNS route.
 16. Adds minutely scheduler cron: `php artisan schedule:run`.
@@ -308,16 +308,13 @@ To automate process monitoring, add `templates/watchdog.sh` to root cron:
 
 ### 2. HTTP 500: View Not Found / Route Not Found
 - **Symptom**: Application returns HTTP 500 immediately following a new release.
-- **Root Cause**: Laravel cached outdated paths from previous release directory in `bootstrap/cache/routes-v7.php` or `config.php`.
-- **Resolution**:
+- **Root Cause**: Caches built before the code that needs them, or a stale `bootstrap/cache/routes-v7.php` from the previous release.
+- **Resolution**: read `shared/storage/logs/laravel.log` first, then rebuild:
   ```bash
   cd /home/fana-deploy/deployment/apps/<app>/current
-  php artisan config:clear
-  php artisan route:clear
-  php artisan view:clear
-  php artisan cache:clear
-  /home/fana-deploy/fana-deploy restart
+  php artisan route:clear && php artisan optimize
   ```
+  Restart only if the log points at an already-loaded PHP file: `/home/fana-deploy/fana-deploy restart <app>`. Avoid `optimize:clear` while a worker is live with database cache/session — it deadlocks.
 
 ### 3. Database Locked (`SQLSTATE[HY000]: General error: 5 database is locked`)
 - **Symptom**: Concurrent writes fail during traffic bursts or scheduled jobs.
