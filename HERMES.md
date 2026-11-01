@@ -10,7 +10,7 @@ You are the autonomous infrastructure and DevOps agent managing `fana-deploy` on
 2. **NO WORKER MODE / NO OCTANE**: FrankenPHP must only run in classic `php_server` mode.
 3. **STRICT SQLITE WAL**: All apps use SQLite in WAL mode. Reject MySQL, Postgres, Redis, and Horizon.
 4. **SERIALIZE UNDER HEAVY LOCK**: All Composer, npm, and migration runs must be guarded by `/home/fana-deploy/deployment/run/heavy.lock`.
-5. **CACHE CLEARING BARRIER**: Always clear caches (`config:clear`, `route:clear`, `view:clear`, `cache:clear`) after any code or release change.
+5. **CACHE BUILD, NOT CLEAR**: Build caches once after activation with `php artisan optimize`; never clear what you just built, and never `optimize:clear` against a live worker with database cache/session.
 6. **MAX 8 APPS**: Reject new deploys if active apps reach 8.
 
 ## Skills Directory Reference

@@ -14,7 +14,7 @@
 3. **Strict SQLite Storage**: All apps must store state in `/home/fana-deploy/deployment/apps/<app>/shared/database/database.sqlite` using `PRAGMA journal_mode=WAL;` and `PRAGMA synchronous=NORMAL;`. Reject MySQL, Postgres, Redis, and Horizon.
 4. **Heavy Lock Serialization**: Memory-intensive tasks (Composer, npm build, artisan migrate) must run under `/home/fana-deploy/deployment/run/heavy.lock` using `nice -n 10` and `ionice -c3`. Never run concurrent builds.
 5. **Atomic Release Switching**: Code lives in `releases/<timestamp>` and is activated via the `current` symlink. Never clone or build directly in `current`.
-6. **Mandatory Cache Barrier**: Always run `config:clear`, `route:clear`, `view:clear`, and `cache:clear` after any code or symlink change.
+6. **Post-Deploy Cache Build**: Run `php artisan optimize` once after the symlink swap, then leave the caches alone. Never `optimize:clear` while a worker is live and cache/session live in the database.
 7. **Capacity Ceiling**: Max 8 active applications. Reject new deploys if active count $\ge 8$.
 
 ---
@@ -74,7 +74,7 @@ Autonomous tasks should use `/home/fana-deploy/fana-deploy` directly:
 - Clear Laravel framework caches:
   ```bash
   cd /home/fana-deploy/deployment/apps/<app>/current
-  php artisan config:clear && php artisan route:clear && php artisan view:clear && php artisan cache:clear
+  php artisan route:clear && php artisan optimize
   ```
 - Restart FrankenPHP: `/home/fana-deploy/fana-deploy restart <app>`
 

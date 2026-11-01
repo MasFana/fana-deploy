@@ -168,7 +168,7 @@ ENVEOF
         # Heavy Composer install
         echo '[DEPLOY] Installing composer dependencies with --no-dev under heavy lock...'
         run_composer() {
-            \"${SCRIPTS_DIR}/lock.sh\" heavy env COMPOSER_MEMORY_LIMIT=1G composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --working-dir=\"\${TARGET_DIR}\"
+            \"${SCRIPTS_DIR}/lock.sh\" heavy env COMPOSER_MEMORY_LIMIT=1G composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction --working-dir=\"\${TARGET_DIR}\"
         }
 
         if ! run_composer; then
@@ -215,12 +215,12 @@ ENVEOF
         # Atomically activate release
         ln -sfn \"\${TARGET_DIR}\" \"\${APP_ROOT}/current\"
 
-        # Clear application & framework caches to prevent stale route/view 500 errors
-        echo '[DEPLOY] Clearing Laravel caches...'
-        php \"\${TARGET_DIR}/artisan\" config:clear >/dev/null 2>&1 || true
-        php \"\${TARGET_DIR}/artisan\" route:clear >/dev/null 2>&1 || true
-        php \"\${TARGET_DIR}/artisan\" view:clear >/dev/null 2>&1 || true
-        php \"\${TARGET_DIR}/artisan\" cache:clear >/dev/null 2>&1 || true
+        # Build config/events/route/view caches for the release that is now live.
+        # Built last and never cleared again: the app serves from these until the
+        # next deploy, and optimize:clear deadlocks a live worker when
+        # CACHE_STORE/SESSION_DRIVER is the database.
+        echo '[DEPLOY] Building Laravel caches...'
+        php \"\${TARGET_DIR}/artisan\" optimize >/dev/null 2>&1 || true
 
         chown -R fana:fana \"\${APP_ROOT}\"
         chmod -R 775 \"\${SHARED_DIR}/storage\" \"\${SHARED_DIR}/database\"
